@@ -42,9 +42,9 @@ async fn index() -> Result<Json<Vec<LiveConcert>>, NotFound<String>> {
                 .filter_map(|e| get_concert_from_event(e).ok())
                 .collect();
 
-            return Ok(Json(all_lives))
+            Ok(Json(all_lives))
         },
-        Err(e) => return Err(NotFound(e))
+        Err(e) => Err(NotFound(e))
     }
 }
 

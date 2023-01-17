@@ -28,12 +28,12 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
     let (title, jpy_price, format) = get_title_price_and_platform_from_summary(summary_str)
         .map_err(|e| {
             error!("{}", e);
-            e.to_string()
+            e
         })?;
     let platform = get_platform_from_tag(category_str)
         .map_err(|e| {
             error!("{}", e);
-            e.to_string()
+            e
         })?;
     let description = e.get_description()
         .ok_or("failed to get description")
@@ -45,12 +45,12 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
     let start_time = get_start_time_from_event(e)
         .map_err(|e| {
             error!("{}", e);
-            e.to_string()
+            e
         })?;
     let image_url: Option<Url> = get_image_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for image url")).ok();
     let twitter_url: Option<Url> = get_twitter_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for twitter url")).ok();
 
-    return Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url });
+    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url })
 }
 
 pub fn get_start_time_from_event(event: &Event) -> Result<DateTime<Utc>, String> {
@@ -99,7 +99,7 @@ pub fn get_title_price_and_platform_from_summary(summary: &str) -> Result<(Strin
 
     let title = String::from(&matched[3]);
 
-    return Ok((title, price_parsed, format_parsed));
+    Ok((title, price_parsed, format_parsed))
 }
 
 pub fn get_price_from_string(price: &str) -> Result<JpyPrice, String> {
@@ -141,15 +141,13 @@ pub fn get_price_from_string(price: &str) -> Result<JpyPrice, String> {
 pub fn get_format_from_string(platform: &str) -> Result<LiveFormat, String> {
     if platform.contains("🌐🪑") {
         Ok(LiveFormat::Both)
+    } else if platform.contains('🌐') {
+        Ok(LiveFormat::Online)
+    } else if platform.contains('🪑') {
+       Ok(LiveFormat::Irl)
     } else {
-        if platform.contains("🌐") {
-            Ok(LiveFormat::Online)
-        } else if platform.contains("🪑") {
-           Ok(LiveFormat::Irl)
-        } else {
-            error!("Live format conversion failed, the text is {}", platform);
-            Err(format!("Live format conversion failed, the text is {}", platform))
-        }
+        error!("Live format conversion failed, the text is {}", platform);
+        Err(format!("Live format conversion failed, the text is {}", platform))
     }
 }
 
@@ -183,7 +181,7 @@ pub fn get_image_url_from_description(description: &str) -> Result<Url, String> 
     if let Some(matched) = first_try_match.captures(description) {
         let url = &matched[1];
         let parsed = Url::parse(url).map_err(|e| e.to_string())?;
-        return Ok(parsed);
+        Ok(parsed)
     } else {
         if let Some(second_try) = second_try_match.captures(description) {
             let url = &second_try[1];
@@ -202,7 +200,7 @@ pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String
     if let Some(matched) = matcher.captures(description) {
         let twitter_url = &matched[1];
         let parsed = Url::parse(twitter_url).map_err(|e| e.to_string())?;
-        return Ok(parsed);
+        Ok(parsed)
     } else {
         error!("twitter url parse failed, the description is {}", description);
         Err(format!("twitter url parse failed, the description is {}", description))
