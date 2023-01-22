@@ -169,8 +169,8 @@ pub fn get_platform_from_tag(tag_string: &str) -> Result<Platform, String> {
     } else if lowercased == "other" {
         Ok(Platform::Other)
     } else {
-        error!("Calendar category parsing failed, the text is {}", tag_string);
-        Err(format!("Calendar category parsing failed, the text is {}", tag_string))
+        error!("Calendar category parsing failed, the text is \"{}\"", tag_string);
+        Err(format!("Calendar category parsing failed, the text is \"{}\"", tag_string))
     }
 }
 
@@ -189,8 +189,8 @@ pub fn get_image_url_from_description(description: &str) -> Result<Url, String> 
             return Ok(parsed);
         }
 
-        error!("image url parse failed, the description is {}", description);
-        Err(format!("image url parse failed, the description is {}", description))
+        error!("image url parse failed, the description is \"{}\"", description);
+        Err(format!("image url parse failed, the description is \"{}\"", description))
     }
 }
 
@@ -202,8 +202,8 @@ pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String
         let parsed = Url::parse(twitter_url).map_err(|e| e.to_string())?;
         Ok(parsed)
     } else {
-        error!("twitter url parse failed, the description is {}", description);
-        Err(format!("twitter url parse failed, the description is {}", description))
+        error!("twitter url parse failed, the description is \"{}\"", description);
+        Err(format!("twitter url parse failed, the description is \"{}\"", description))
     }
 }
 

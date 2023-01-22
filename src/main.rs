@@ -13,6 +13,7 @@ use chrono_tz::{
     Tz,
     Asia::Tokyo
 };
+use log::warn;
 
 mod calendar;
 
@@ -34,12 +35,14 @@ async fn index() -> Result<Json<Vec<LiveConcert>>, NotFound<String>> {
     match read_calendar(unfold(calendar_string.as_str()).as_str()) {
         Ok(c) => {
             let calendar: Calendar = c.into();
-            println!("{}", calendar);
+            // println!("{}", calendar);
             let all_lives = calendar.components
                 .iter()
                 .filter_map(|c| c.as_event())
                 .filter(|e| is_future_event(e))
-                .filter_map(|e| get_concert_from_event(e).ok())
+                .filter_map(|e| get_concert_from_event(e)
+                    .map_err(|err| warn!("getting concert from event failed, the error is {}, the event is {:?}", err, e))
+                    .ok())
                 .collect();
 
             Ok(Json(all_lives))
