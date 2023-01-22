@@ -313,7 +313,7 @@ mod tests {
     #[test]
     fn test_platform_three() {
         let platform_str = "Some other";
-        assert_eq!(get_platform_from_tag(platform_str), Err(String::from("Calendar category parsing failed, the text is Some other")));
+        assert_eq!(get_platform_from_tag(platform_str), Err(String::from("Calendar category parsing failed, the text is \"Some other\"")));
     }
 
     #[test]
@@ -349,7 +349,7 @@ mod tests {
     #[test]
     fn test_get_image_url_from_description_four() {
         let description = "there is no image in the description";
-        assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed, the description is there is no image in the description")));
+        assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed, the description is \"there is no image in the description\"")));
     }
 
     #[test]
@@ -369,10 +369,10 @@ Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
-        assert_eq!(get_twitter_url_from_description(description), Err(String::from(r#"twitter url parse failed, the description is SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
+        assert_eq!(get_twitter_url_from_description(description), Err(String::from(r#"twitter url parse failed, the description is "SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
 
 Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
 
-Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#)));
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6""#)));
     }
 }
