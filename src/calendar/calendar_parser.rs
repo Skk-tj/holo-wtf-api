@@ -219,7 +219,8 @@ mod tests {
             get_format_from_string,
             get_platform_from_tag,
             get_title_price_and_platform_from_summary,
-            get_image_url_from_description
+            get_image_url_from_description,
+            get_twitter_url_from_description
         }, 
         models::{JpyPrice, LiveFormat, Platform},
     };
@@ -349,5 +350,29 @@ mod tests {
     fn test_get_image_url_from_description_four() {
         let description = "there is no image in the description";
         assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed, the description is there is no image in the description")));
+    }
+
+    #[test]
+    fn test_get_twitter_url_from_description_one() {
+        let description = r#"Ticket link: https://www.zan-live.com/en/live/detail/10241
+
+https://twitter.com/Yuzuha_Virtual/status/1596491181395177472
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+        assert_eq!(get_twitter_url_from_description(description), Ok(Url::parse("https://twitter.com/Yuzuha_Virtual/status/1596491181395177472").unwrap()));
+    }
+
+    #[test]
+    fn test_get_twitter_url_from_description_two() {
+        let description = r#"SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
+
+Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+        assert_eq!(get_twitter_url_from_description(description), Err(String::from(r#"twitter url parse failed, the description is SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
+
+Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#)));
     }
 }
