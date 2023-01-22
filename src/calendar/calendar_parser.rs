@@ -218,10 +218,12 @@ mod tests {
             get_price_from_string, 
             get_format_from_string,
             get_platform_from_tag,
-            get_title_price_and_platform_from_summary
+            get_title_price_and_platform_from_summary,
+            get_image_url_from_description
         }, 
-        models::{JpyPrice, LiveFormat, Platform}
+        models::{JpyPrice, LiveFormat, Platform},
     };
+    use url::Url;
 
     #[test]
     fn test_multi_tier_match() {
@@ -323,5 +325,29 @@ mod tests {
     fn test_platform_five() {
         let platform_str = "SPWN";
         assert_eq!(get_platform_from_tag(platform_str), Ok(Platform::Spwn));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_one() {
+        let description = "!Image: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_two() {
+        let description = "!some_images_name.jpg: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_three() {
+        let description = "!some_images_name.png: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_four() {
+        let description = "there is no image in the description";
+        assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed, the description is there is no image in the description")));
     }
 }
