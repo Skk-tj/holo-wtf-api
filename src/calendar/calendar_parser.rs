@@ -49,8 +49,9 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
         })?;
     let image_url: Option<Url> = get_image_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for image url")).ok();
     let twitter_url: Option<Url> = get_twitter_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for twitter url")).ok();
+    let youtube_link: Option<Url> = get_youtube_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for youtube url")).ok();
 
-    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url })
+    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link })
 }
 
 pub fn get_start_time_from_event(event: &Event) -> Result<DateTime<Utc>, String> {
@@ -207,6 +208,19 @@ pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String
     }
 }
 
+pub fn get_youtube_link_from_description(description: &str) -> Result<Url, String> {
+    let matcher = Regex::new(r"[Yy]ou[Tt]ube\s[Ll]ink(?::\s|:)(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+
+    if let Some(matched) = matcher.captures(description) {
+        let youtube_url = &matched[1];
+        let parsed = Url::parse(youtube_url).map_err(|e| e.to_string())?;
+        Ok(parsed)
+    } else {
+        error!("youtube url parse failed, the description is \"{}\"", description);
+        Err(format!("youtube url parse failed, the description is \"{}\"", description))
+    }
+}
+
 pub fn remove_form_link_from_description_and_trim(description: &str) -> String {
     String::from(description.replace(r"Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6", "").trim())
 }
@@ -220,7 +234,8 @@ mod tests {
             get_platform_from_tag,
             get_title_price_and_platform_from_summary,
             get_image_url_from_description,
-            get_twitter_url_from_description
+            get_twitter_url_from_description,
+            get_youtube_link_from_description
         }, 
         models::{JpyPrice, LiveFormat, Platform},
     };
@@ -374,5 +389,15 @@ Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6""#)));
+    }
+
+    #[test]
+    fn test_get_youtube_url_from_description_one() {
+        let description = r#"YouTube link: https://www.youtube.com/watch?v=JiOw0LhFYtQ 
+
+https://twitter.com/kaf_info/status/1616638809218895874
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+        assert_eq!(get_youtube_link_from_description(description), Ok(Url::parse("https://www.youtube.com/watch?v=JiOw0LhFYtQ").unwrap()));
     }
 }

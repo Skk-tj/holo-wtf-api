@@ -54,4 +54,5 @@ pub struct LiveConcert {
     pub start_time: DateTime<Utc>,
     pub image_url: Option<Url>,
     pub twitter_url: Option<Url>,
+    pub youtube_link: Option<Url>
 }
