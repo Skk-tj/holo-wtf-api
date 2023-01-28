@@ -50,8 +50,9 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
     let image_url: Option<Url> = get_image_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for image url")).ok();
     let twitter_url: Option<Url> = get_twitter_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for twitter url")).ok();
     let youtube_link: Option<Url> = get_youtube_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for youtube url")).ok();
+    let ticket_link: Option<Url> = get_ticket_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for ticket url")).ok();
 
-    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link })
+    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link, ticket_link })
 }
 
 pub fn get_start_time_from_event(event: &Event) -> Result<DateTime<Utc>, String> {
@@ -120,7 +121,7 @@ pub fn get_price_from_string(price: &str) -> Result<JpyPrice, String> {
             return Ok(JpyPrice::Fixed(price));
         } else {
             error!("Price conversion failed, the string is {}", price_text);
-            return Err(format!("Price conversion failed, the string is {}", price_text));
+            return Err(String::from("Price conversion failed"));
         }
     }
 
@@ -132,11 +133,11 @@ pub fn get_price_from_string(price: &str) -> Result<JpyPrice, String> {
             return Ok(JpyPrice::MultiTier(price));
         } else {
             error!("Price conversion failed, the string is {}", price_text);
-            return Err(format!("Price conversion failed, the string is {}", price_text));
+            return Err(String::from("Price conversion failed"));
         }
     }
 
-    return Err(format!("Price conversion failed, the string is {}", price));
+    return Err(String::from("Price conversion failed"));
 }
 
 pub fn get_format_from_string(platform: &str) -> Result<LiveFormat, String> {
@@ -148,7 +149,7 @@ pub fn get_format_from_string(platform: &str) -> Result<LiveFormat, String> {
        Ok(LiveFormat::Irl)
     } else {
         error!("Live format conversion failed, the text is {}", platform);
-        Err(format!("Live format conversion failed, the text is {}", platform))
+        Err(String::from("Live format conversion failed"))
     }
 }
 
@@ -171,7 +172,7 @@ pub fn get_platform_from_tag(tag_string: &str) -> Result<Platform, String> {
         Ok(Platform::Other)
     } else {
         error!("Calendar category parsing failed, the text is \"{}\"", tag_string);
-        Err(format!("Calendar category parsing failed, the text is \"{}\"", tag_string))
+        Err(String::from("Calendar category parsing failed"))
     }
 }
 
@@ -191,7 +192,7 @@ pub fn get_image_url_from_description(description: &str) -> Result<Url, String> 
         }
 
         error!("image url parse failed, the description is \"{}\"", description);
-        Err(format!("image url parse failed, the description is \"{}\"", description))
+        Err(String::from("image url parse failed"))
     }
 }
 
@@ -204,7 +205,7 @@ pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String
         Ok(parsed)
     } else {
         error!("twitter url parse failed, the description is \"{}\"", description);
-        Err(format!("twitter url parse failed, the description is \"{}\"", description))
+        Err(String::from("twitter url parse failed"))
     }
 }
 
@@ -217,7 +218,20 @@ pub fn get_youtube_link_from_description(description: &str) -> Result<Url, Strin
         Ok(parsed)
     } else {
         error!("youtube url parse failed, the description is \"{}\"", description);
-        Err(format!("youtube url parse failed, the description is \"{}\"", description))
+        Err(String::from("youtube url parse failed"))
+    }
+}
+
+pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String> {
+    let matcher = Regex::new(r"[T|t]icket [L|l]ink:\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+
+    if let Some(matched) = matcher.captures(description) {
+        let ticket_url = &matched[1];
+        let parsed = Url::parse(ticket_url).map_err(|e| e.to_string())?;
+        Ok(parsed)
+    } else {
+        error!("ticket url parse failed, the description is \"{}\"", description);
+        Err(String::from("ticket url parse failed"))
     }
 }
 
@@ -235,7 +249,8 @@ mod tests {
             get_title_price_and_platform_from_summary,
             get_image_url_from_description,
             get_twitter_url_from_description,
-            get_youtube_link_from_description
+            get_youtube_link_from_description,
+            get_ticket_link_from_description
         }, 
         models::{JpyPrice, LiveFormat, Platform},
     };
@@ -292,7 +307,7 @@ mod tests {
     #[test]
     fn test_format_error_match() {
         let format_str = "asgaeheaf";
-        assert_eq!(get_format_from_string(format_str), Err(String::from("Live format conversion failed, the text is asgaeheaf")));
+        assert_eq!(get_format_from_string(format_str), Err(String::from("Live format conversion failed")));
     }
 
     #[test]
@@ -328,7 +343,7 @@ mod tests {
     #[test]
     fn test_platform_three() {
         let platform_str = "Some other";
-        assert_eq!(get_platform_from_tag(platform_str), Err(String::from("Calendar category parsing failed, the text is \"Some other\"")));
+        assert_eq!(get_platform_from_tag(platform_str), Err(String::from("Calendar category parsing failed")));
     }
 
     #[test]
@@ -364,7 +379,7 @@ mod tests {
     #[test]
     fn test_get_image_url_from_description_four() {
         let description = "there is no image in the description";
-        assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed, the description is \"there is no image in the description\"")));
+        assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed")));
     }
 
     #[test]
@@ -384,11 +399,7 @@ Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
-        assert_eq!(get_twitter_url_from_description(description), Err(String::from(r#"twitter url parse failed, the description is "SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
-
-Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
-
-Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6""#)));
+        assert_eq!(get_twitter_url_from_description(description), Err(String::from("twitter url parse failed")));
     }
 
     #[test]
@@ -399,5 +410,37 @@ https://twitter.com/kaf_info/status/1616638809218895874
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
         assert_eq!(get_youtube_link_from_description(description), Ok(Url::parse("https://www.youtube.com/watch?v=JiOw0LhFYtQ").unwrap()));
+    }
+
+    #[test]
+    fn test_get_youtube_url_from_description_two() {
+        let description = r#"Ticket link: https://www.zan-live.com/en/live/detail/10241
+
+https://twitter.com/VALIS_Official/status/1588365423128420353
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+        assert_eq!(get_youtube_link_from_description(description), Err(String::from("youtube url parse failed")));
+    }
+
+    #[test]
+    fn test_get_ticket_link_from_description_one() {
+        let description = r#"Ticket link: https://www.zan-live.com/en/live/detail/10241
+
+https://twitter.com/VALIS_Official/status/1588365423128420353
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_ticket_link_from_description(description), Ok(Url::parse("https://www.zan-live.com/en/live/detail/10241").unwrap()));
+    }
+
+    #[test]
+    fn test_get_ticket_link_from_description_two() {
+        let description = r#"SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
+
+Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_ticket_link_from_description(description), Err(String::from("ticket url parse failed")));
     }
 }
