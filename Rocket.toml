@@ -1,0 +1,4 @@
+[release]
+address = "0.0.0.0"
+port = 32154
+log_level = "normal"
