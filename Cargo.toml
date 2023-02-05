@@ -16,3 +16,4 @@ chrono = { version = "*", features = ["clock", "serde"] }
 chrono-tz = "*"
 regex = "*"
 log = "*"
+uuid = { version = "*", features = ["v4", "fast-rng", "serde"] }

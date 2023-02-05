@@ -5,6 +5,7 @@ use regex::Regex;
 use icalendar::{Event, Component, DatePerhapsTime, CalendarDateTime};
 use url::Url;
 use log::{error, info};
+use uuid::Uuid;
 
 pub async fn get_concert_calendar_in_string() -> Result<String, reqwest::Error> {
     let res_text = reqwest::get("https://ics.teamup.com/feed/ks58vf85ajmc6pd7vu/0.ics").await?.text().await?;
@@ -52,7 +53,7 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
     let youtube_link: Option<Url> = get_youtube_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for youtube url")).ok();
     let ticket_link: Option<Url> = get_ticket_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for ticket url")).ok();
 
-    Ok(LiveConcert { title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link, ticket_link })
+    Ok(LiveConcert { id: Uuid::new_v4(), title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link, ticket_link })
 }
 
 pub fn get_start_time_from_event(event: &Event) -> Result<DateTime<Utc>, String> {

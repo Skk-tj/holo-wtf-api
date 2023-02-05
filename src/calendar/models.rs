@@ -1,6 +1,7 @@
 use chrono::{DateTime, Utc};
 use url::Url;
 use rocket::serde::Serialize;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, PartialEq)]
 pub enum LiveFormat {
@@ -30,6 +31,7 @@ pub enum JpyPrice {
 
 #[derive(Debug, Serialize)]
 pub struct LiveConcert {
+    pub id: Uuid,
     pub title: String, 
     pub format: LiveFormat,
     pub jpy_price: JpyPrice,
