@@ -48,4 +48,4 @@ jobs:
       with:
         context: .
         push: true
-        tags: us-central1-docker.pkg.dev/holo-wtf-api-376303/holo-wtf-api:latest
+        tags: us-central1-docker.pkg.dev/holo-wtf-api-376303/holo-wtf-api/holo-wtf-api:latest
