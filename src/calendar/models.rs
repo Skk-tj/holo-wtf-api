@@ -22,6 +22,7 @@ pub enum Platform {
 }
 
 #[derive(Debug, Serialize, PartialEq)]
+#[serde(tag = "tag", content = "content")]
 pub enum JpyPrice {
     Tbd,
     Free,
