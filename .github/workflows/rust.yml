@@ -49,3 +49,9 @@ jobs:
         context: .
         push: true
         tags: us-central1-docker.pkg.dev/holo-wtf-api-376303/holo-wtf-api/holo-wtf-api:latest
+     
+    - id: 'deploy'
+      uses: 'google-github-actions/deploy-cloudrun@v1'
+      with:
+        service: 'holo-wtf-api'
+        image: 'us-central1-docker.pkg.dev/holo-wtf-api-376303/holo-wtf-api/holo-wtf-api:latest'

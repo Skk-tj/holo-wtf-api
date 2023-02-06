@@ -42,7 +42,7 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
             error!("{}", e);
             e.to_string()
         })?;
-    let trimmed_description = remove_form_link_from_description_and_trim(description);
+    let trimmed_description = remove_form_link_from_description_and_trim(String::from(description));
     let start_time = get_start_time_from_event(e)
         .map_err(|e| {
             error!("{}", e);
@@ -100,7 +100,7 @@ pub fn get_title_price_and_platform_from_summary(summary: &str) -> Result<(Strin
     let format_text = &matched[2];
     let format_parsed = get_format_from_string(format_text)?;
 
-    let title = String::from(&matched[3]);
+    let title = String::from(matched[3].trim());
 
     Ok((title, price_parsed, format_parsed))
 }
@@ -179,7 +179,7 @@ pub fn get_platform_from_tag(tag_string: &str) -> Result<Platform, String> {
 
 pub fn get_image_url_from_description(description: &str) -> Result<Url, String> {
     let first_try_match = Regex::new(r"!Image: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
-    let second_try_match = Regex::new(r"!.+[(\.jpg)|(\.png)]: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let second_try_match = Regex::new(r"!.+: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = first_try_match.captures(description) {
         let url = &matched[1];
@@ -224,7 +224,7 @@ pub fn get_youtube_link_from_description(description: &str) -> Result<Url, Strin
 }
 
 pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String> {
-    let matcher = Regex::new(r"[T|t]icket [L|l]ink:\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let matcher = Regex::new(r"[T|t]icket (?:[L|l]ink|site):\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = matcher.captures(description) {
         let ticket_url = &matched[1];
@@ -236,8 +236,11 @@ pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String
     }
 }
 
-pub fn remove_form_link_from_description_and_trim(description: &str) -> String {
-    String::from(description.replace(r"Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6", "").trim())
+pub fn remove_form_link_from_description_and_trim(description: String) -> String {
+    let description_removed = description.replace(r"Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6", "");
+    // let x: &[_] = &['\\', '\n'];
+    let new_line_removed = description_removed.trim_end_matches("\\n");
+    String::from(new_line_removed)
 }
 
 #[cfg(test)]
@@ -381,6 +384,28 @@ mod tests {
     fn test_get_image_url_from_description_four() {
         let description = "there is no image in the description";
         assert_eq!(get_image_url_from_description(description), Err(String::from("image url parse failed")));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_five() {
+        let description = r#"
+        !Image: https://pbs.twimg.com/media/FnuL69caUAA-1kd?format=jpg&name=small
+        
+        Za-N link: https://www.zan-live.com/en/live/detail/10274[](https://www.zan-live.com/en/live/detail/10242)
+        
+        https://twitter.com/LiLYPSE/status/1620014088486100994
+        "#;
+
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FnuL69caUAA-1kd?format=jpg&name=small").unwrap()));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_six() {
+        let description = r#"
+        !Fm6E28BaYAI6Ydt?format=jpg&name=small: https://pbs.twimg.com/media/Fm6E28BaYAI6Ydt?format=jpg&name=small
+        "#;
+
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/Fm6E28BaYAI6Ydt?format=jpg&name=small").unwrap()));
     }
 
     #[test]
