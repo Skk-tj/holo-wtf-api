@@ -179,7 +179,7 @@ pub fn get_platform_from_tag(tag_string: &str) -> Result<Platform, String> {
 
 pub fn get_image_url_from_description(description: &str) -> Result<Url, String> {
     let first_try_match = Regex::new(r"!Image: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
-    let second_try_match = Regex::new(r"!.+: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let second_try_match = Regex::new(r"!.*?: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = first_try_match.captures(description) {
         let url = &matched[1];
@@ -406,6 +406,15 @@ mod tests {
         "#;
 
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/Fm6E28BaYAI6Ydt?format=jpg&name=small").unwrap()));
+    }
+
+    #[test]
+    fn test_get_image_url_from_description_seven() {
+        let description = r#"
+        !Stream Information: https://storage.zan-live.com/image/63441_ldec68lz.png\\n\\nTicket link: https://www.zan-live.com/en/live/detail/10269\\n\\nhttps://twitter.com/Yuzuha_Virtual/status/1596491181395177472
+        "#;
+
+        assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://storage.zan-live.com/image/63441_ldec68lz.png").unwrap()));
     }
 
     #[test]
