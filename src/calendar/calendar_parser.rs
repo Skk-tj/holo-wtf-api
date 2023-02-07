@@ -1,7 +1,7 @@
 use super::models::{LiveFormat, JpyPrice, Platform, LiveConcert};
 use chrono::{DateTime, offset, NaiveTime, Utc, TimeZone};
 use chrono_tz::Tz;
-use regex::Regex;
+use regex::{Regex, RegexSet};
 use icalendar::{Event, Component, DatePerhapsTime, CalendarDateTime};
 use url::Url;
 use log::{error, info};
@@ -224,12 +224,27 @@ pub fn get_youtube_link_from_description(description: &str) -> Result<Url, Strin
 }
 
 pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String> {
-    let matcher = Regex::new(r"[T|t]icket (?:[L|l]ink|site):\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let set = RegexSet::new(&[
+        r"[T|t]icket (?:[L|l]ink|site):\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
+        r"(https?://(www\.)?zan-live\.com\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
+        r"(https?://virtual\.spwn\.jp\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
+        r"(https?://live\.nicovideo\.jp\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"
+    ]).unwrap();
 
-    if let Some(matched) = matcher.captures(description) {
-        let ticket_url = &matched[1];
-        let parsed = Url::parse(ticket_url).map_err(|e| e.to_string())?;
-        Ok(parsed)
+    let regexes: Vec<_> = set.patterns().iter()
+        .map(|pat| Regex::new(pat).unwrap())
+        .collect();
+
+    let matches: Vec<_> = set.matches(description).into_iter().collect();
+    if let Some(first_idx) = matches.first() {
+        if let Some(matched) = regexes[*first_idx].captures(description) {
+            let ticket_url = &matched[1];
+            let parsed = Url::parse(ticket_url).map_err(|e| e.to_string())?;
+            Ok(parsed)
+        } else {
+            error!("ticket url parse failed, the description is \"{}\"", description);
+            Err(String::from("ticket url parse failed"))
+        }
     } else {
         error!("ticket url parse failed, the description is \"{}\"", description);
         Err(String::from("ticket url parse failed"))
@@ -476,6 +491,34 @@ Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 
-        assert_eq!(get_ticket_link_from_description(description), Err(String::from("ticket url parse failed")));
+        assert_eq!(get_ticket_link_from_description(description), Ok(Url::parse("https://virtual.spwn.jp/events/23031801-jphololive4thfes").unwrap()));
+    }
+
+    #[test]
+    fn test_get_ticket_link_from_description_three() {
+        let description = r#"NND link: TBAhttps://live.nicovideo.jp/watch/lv339349141
+
+Official site: https://enogu-official.com/230120-1/
+
+https://twitter.com/anzu15_225/status/1616375404075548679
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_ticket_link_from_description(description), Ok(Url::parse("https://live.nicovideo.jp/watch/lv339349141").unwrap()));
+    }
+
+    #[test]
+    fn test_get_ticket_link_from_description_four() {
+        let description = r#"(Was postponed due to technical issues)
+
+ZaN link: https://www.zan-live.com/en/live/detail/10265
+
+Participants: Marinasu (last appearance of Kaname Mahiro), Yumeji Nanjo, Yume Kanau, LiLYPSE, aides
+
+https://twitter.com/MarinasuChannel/status/1596480282009686018
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_ticket_link_from_description(description), Ok(Url::parse("https://www.zan-live.com/en/live/detail/10265").unwrap()));
     }
 }
