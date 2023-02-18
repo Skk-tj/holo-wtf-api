@@ -52,8 +52,9 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
     let twitter_url: Option<Url> = get_twitter_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for twitter url")).ok();
     let youtube_link: Option<Url> = get_youtube_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for youtube url")).ok();
     let ticket_link: Option<Url> = get_ticket_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for ticket url")).ok();
+    let official_link: Option<Url> = get_official_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for official url")).ok();
 
-    Ok(LiveConcert { id: Uuid::new_v4(), title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link, ticket_link })
+    Ok(LiveConcert { id: Uuid::new_v4(), title, format, jpy_price, platform, description: trimmed_description, start_time, image_url, twitter_url, youtube_link, ticket_link, official_link })
 }
 
 pub fn get_start_time_from_event(event: &Event) -> Result<DateTime<Utc>, String> {
@@ -211,10 +212,10 @@ pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String
 }
 
 pub fn get_youtube_link_from_description(description: &str) -> Result<Url, String> {
-    let matcher = Regex::new(r"[Yy]ou[Tt]ube\s[Ll]ink(?::\s|:)(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let matcher = Regex::new(r"http(?:s?)://(?:www\.)?youtu(?:be\.com/watch\?v=|\.be/)([\w\-_]*)(&(amp;)?[\w\?=]*)?").unwrap();
 
     if let Some(matched) = matcher.captures(description) {
-        let youtube_url = &matched[1];
+        let youtube_url = &matched[0];
         let parsed = Url::parse(youtube_url).map_err(|e| e.to_string())?;
         Ok(parsed)
     } else {
@@ -251,6 +252,19 @@ pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String
     }
 }
 
+pub fn get_official_link_from_description(description: &str) -> Result<Url, String> {
+    let matcher = Regex::new(r"Official site:\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+
+    if let Some(matched) = matcher.captures(description) {
+        let official_link = &matched[1];
+        let parsed = Url::parse(official_link).map_err(|e| e.to_string())?;
+        Ok(parsed)
+    } else {
+        error!("official url parse failed, the description is \"{}\"", description);
+        Err(String::from("official url parse failed"))
+    }
+}
+
 pub fn remove_form_link_from_description_and_trim(description: String) -> String {
     let description_removed = description.replace(r"Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6", "");
     // let x: &[_] = &['\\', '\n'];
@@ -274,6 +288,8 @@ mod tests {
         models::{JpyPrice, LiveFormat, Platform},
     };
     use url::Url;
+
+    use super::get_official_link_from_description;
 
     #[test]
     fn test_multi_tier_match() {
@@ -520,5 +536,40 @@ https://twitter.com/MarinasuChannel/status/1596480282009686018
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 
         assert_eq!(get_ticket_link_from_description(description), Ok(Url::parse("https://www.zan-live.com/en/live/detail/10265").unwrap()));
+    }
+
+    #[test]
+    fn test_get_official_link_from_description_one() {
+        let description = r#"SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
+
+Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_official_link_from_description(description), Ok(Url::parse("https://hololivesuperexpo2023.hololivepro.com/fes/").unwrap()));
+    }
+
+    #[test]
+    fn test_get_official_link_from_description_two() {
+        let description = r#"Free segment: https://www.youtube.com/watch?v=8v1dGdpE484
+
+ZAIKO link: https://palette-project.zaiko.io/item/353750
+
+Official site: http://makeup.matereal.jp/
+
+https://twitter.com/PaletteProject_/status/1626133117848387584
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_official_link_from_description(description), Ok(Url::parse("http://makeup.matereal.jp/").unwrap()));
+    }
+
+    #[test]
+    fn test_get_official_link_from_description_three() {
+        let description = r#"https://twitter.com/LifeLikeaLive/status/1620013967601967107
+
+Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
+
+        assert_eq!(get_official_link_from_description(description), Err(String::from("official url parse failed")));
     }
 }

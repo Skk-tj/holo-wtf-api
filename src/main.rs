@@ -35,7 +35,6 @@ async fn index() -> Result<Json<Vec<LiveConcert>>, NotFound<String>> {
     match read_calendar(unfold(calendar_string.as_str()).as_str()) {
         Ok(c) => {
             let calendar: Calendar = c.into();
-            // println!("{}", calendar);
             let all_lives = calendar.components
                 .iter()
                 .filter_map(|c| c.as_event())

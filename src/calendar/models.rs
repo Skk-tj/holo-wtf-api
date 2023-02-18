@@ -42,5 +42,6 @@ pub struct LiveConcert {
     pub image_url: Option<Url>,
     pub twitter_url: Option<Url>,
     pub youtube_link: Option<Url>,
-    pub ticket_link: Option<Url>
+    pub ticket_link: Option<Url>,
+    pub official_link: Option<Url>
 }
