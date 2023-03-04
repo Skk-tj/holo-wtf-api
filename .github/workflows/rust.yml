@@ -34,7 +34,6 @@ jobs:
         token_format: access_token
         workload_identity_provider: projects/109844845926/locations/global/workloadIdentityPools/holo-wtf-api-pool/providers/holo-wtf-api-provider
         service_account: github-actions-service-account@holo-wtf-api-376303.iam.gserviceaccount.com
-        access_token_lifetime: 300s
 
     - name: Log in to the Artifact repository
       uses: docker/login-action@v2
