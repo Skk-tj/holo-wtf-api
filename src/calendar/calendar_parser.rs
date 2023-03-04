@@ -48,7 +48,7 @@ pub fn get_concert_from_event(e: &Event) -> Result<LiveConcert, String> {
             error!("{}", e);
             e
         })?;
-    let image_url: Option<Url> = get_image_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for image url")).ok();
+    let image_url: Option<Url> = get_image_url_from_event(e).map_err(|_| info!("returning null for image url")).ok();
     let twitter_url: Option<Url> = get_twitter_url_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for twitter url")).ok();
     let youtube_link: Option<Url> = get_youtube_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for youtube url")).ok();
     let ticket_link: Option<Url> = get_ticket_link_from_description(trimmed_description.as_str()).map_err(|_| info!("returning null for ticket url")).ok();
@@ -265,6 +265,22 @@ pub fn get_official_link_from_description(description: &str) -> Result<Url, Stri
     }
 }
 
+pub fn get_image_url_from_event(e: &Event) -> Result<Url, String> {
+    if let Some(image_url) = e.property_value("ATTACH") {
+        let parsed = Url::parse(image_url).map_err(|e| e.to_string())?;
+        Ok(parsed)
+    } else {
+        let description = e.get_description()
+        .ok_or("failed to get description")
+        .map_err(|e| {
+            error!("{}", e);
+            e.to_string()
+        })?;
+        let trimmed_description = remove_form_link_from_description_and_trim(String::from(description));
+        get_image_url_from_description(&trimmed_description)
+    }
+}
+
 pub fn remove_form_link_from_description_and_trim(description: String) -> String {
     let description_removed = description.replace(r"Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6", "");
     // let x: &[_] = &['\\', '\n'];
@@ -395,19 +411,19 @@ mod tests {
 
     #[test]
     fn test_get_image_url_from_description_one() {
-        let description = "!Image: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        let description = "!Image: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small\n";
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
     }
 
     #[test]
     fn test_get_image_url_from_description_two() {
-        let description = "!some_images_name.jpg: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        let description = "!some_images_name.jpg: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small\n";
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
     }
 
     #[test]
     fn test_get_image_url_from_description_three() {
-        let description = "!some_images_name.png: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small";
+        let description = "!some_images_name.png: https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small\n";
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FifgRAQVEAQvGVm?format=jpg&name=small").unwrap()));
     }
 
@@ -442,7 +458,11 @@ mod tests {
     #[test]
     fn test_get_image_url_from_description_seven() {
         let description = r#"
-        !Stream Information: https://storage.zan-live.com/image/63441_ldec68lz.png\\n\\nTicket link: https://www.zan-live.com/en/live/detail/10269\\n\\nhttps://twitter.com/Yuzuha_Virtual/status/1596491181395177472
+        !Stream Information: https://storage.zan-live.com/image/63441_ldec68lz.png 
+        
+        Ticket link: https://www.zan-live.com/en/live/detail/10269
+        
+        https://twitter.com/Yuzuha_Virtual/status/1596491181395177472
         "#;
 
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://storage.zan-live.com/image/63441_ldec68lz.png").unwrap()));
