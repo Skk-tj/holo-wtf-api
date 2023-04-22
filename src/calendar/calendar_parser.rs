@@ -201,7 +201,7 @@ pub fn get_image_url_from_description(description: &str) -> Result<Url, String> 
 pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String> {
     let matcher = Regex::new(r"(https?://(www\.)?twitter\.com\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))").unwrap();
 
-    if let Some(matched) = matcher.captures(description) {
+    if let Some(matched) = matcher.captures_iter(description).last() {
         let twitter_url = &matched[1];
         let parsed = Url::parse(twitter_url).map_err(|e| e.to_string())?;
         Ok(parsed)
@@ -440,7 +440,7 @@ mod tests {
         
         Za-N link: https://www.zan-live.com/en/live/detail/10274[](https://www.zan-live.com/en/live/detail/10242)
         
-        https://twitter.com/LiLYPSE/status/1620014088486100994: https://twitter.com/LiLYPSE/status/1620014088486100994
+        https://twitter.com/LiLYPSE/status/1620014088486100994
         "#;
 
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FnuL69caUAA-1kd?format=jpg&name=small").unwrap()));
@@ -472,10 +472,10 @@ mod tests {
     fn test_get_twitter_url_from_description_one() {
         let description = r#"Ticket link: https://www.zan-live.com/en/live/detail/10241
 
-https://twitter.com/Yuzuha_Virtual/status/1596491181395177472
+https://twitter.com/VTuberFes\\\\_jp/status/1643810761679028225: https://twitter.com/VTuberFes_jp/status/1643810761679028225
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
-        assert_eq!(get_twitter_url_from_description(description), Ok(Url::parse("https://twitter.com/Yuzuha_Virtual/status/1596491181395177472").unwrap()));
+        assert_eq!(get_twitter_url_from_description(description), Ok(Url::parse("https://twitter.com/VTuberFes_jp/status/1643810761679028225").unwrap()));
     }
 
     #[test]
@@ -562,7 +562,7 @@ Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
     fn test_get_official_link_from_description_one() {
         let description = r#"SPWN link: https://virtual.spwn.jp/events/23031801-jphololive4thfes
 
-Official site: https://hololivesuperexpo2023.hololivepro.com/fes/
+Official site: https://hololivesuperexpo2023.hololivepro.com/fes/: https://hololivesuperexpo2023.hololivepro.com/fes/
 
 Event Suggestion Submission form: https://forms.gle/tZwY1M19YUgUhn9i6"#;
 
