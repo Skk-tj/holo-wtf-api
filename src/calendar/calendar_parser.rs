@@ -179,8 +179,8 @@ pub fn get_platform_from_tag(tag_string: &str) -> Result<Platform, String> {
 }
 
 pub fn get_image_url_from_description(description: &str) -> Result<Url, String> {
-    let first_try_match = Regex::new(r"!Image: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
-    let second_try_match = Regex::new(r"!.*?: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let first_try_match = Regex::new(r"!Image: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))").unwrap();
+    let second_try_match = Regex::new(r"!.*?: (https?://(www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = first_try_match.captures(description) {
         let url = &matched[1];
@@ -199,7 +199,7 @@ pub fn get_image_url_from_description(description: &str) -> Result<Url, String> 
 }
 
 pub fn get_twitter_url_from_description(description: &str) -> Result<Url, String> {
-    let matcher = Regex::new(r"(https?://(www\.)?twitter\.com\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let matcher = Regex::new(r"(https?://(www\.)?twitter\.com\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = matcher.captures(description) {
         let twitter_url = &matched[1];
@@ -226,10 +226,10 @@ pub fn get_youtube_link_from_description(description: &str) -> Result<Url, Strin
 
 pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String> {
     let set = RegexSet::new(&[
-        r"[T|t]icket (?:[L|l]ink|site):\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
-        r"(https?://(www\.)?zan-live\.com\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
-        r"(https?://virtual\.spwn\.jp\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))",
-        r"(https?://live\.nicovideo\.jp\b([-a-zA-Z0-9()@:%_\+.~#?&//=]*))"
+        r"[T|t]icket (?:[L|l]ink|site):\s?(https?://(?:www\.)?[-a-zA-Z0-9@%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@%_\+.~#?&//=]*))",
+        r"(https?://(www\.)?zan-live\.com\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))",
+        r"(https?://virtual\.spwn\.jp\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))",
+        r"(https?://live\.nicovideo\.jp\b([-a-zA-Z0-9()@%_\+.~#?&//=]*))"
     ]).unwrap();
 
     let regexes: Vec<_> = set.patterns().iter()
@@ -253,7 +253,7 @@ pub fn get_ticket_link_from_description(description: &str) -> Result<Url, String
 }
 
 pub fn get_official_link_from_description(description: &str) -> Result<Url, String> {
-    let matcher = Regex::new(r"Official site:\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@:%_\+.~#?&//=]*))").unwrap();
+    let matcher = Regex::new(r"Official site:\s?(https?://(?:www\.)?[-a-zA-Z0-9@:%._\+~#=]{1,256}\.[a-zA-Z0-9()]{1,6}\b(?:[-a-zA-Z0-9()@%_\+.~#?&//=]*))").unwrap();
 
     if let Some(matched) = matcher.captures(description) {
         let official_link = &matched[1];
@@ -440,7 +440,7 @@ mod tests {
         
         Za-N link: https://www.zan-live.com/en/live/detail/10274[](https://www.zan-live.com/en/live/detail/10242)
         
-        https://twitter.com/LiLYPSE/status/1620014088486100994
+        https://twitter.com/LiLYPSE/status/1620014088486100994: https://twitter.com/LiLYPSE/status/1620014088486100994
         "#;
 
         assert_eq!(get_image_url_from_description(description), Ok(Url::parse("https://pbs.twimg.com/media/FnuL69caUAA-1kd?format=jpg&name=small").unwrap()));
